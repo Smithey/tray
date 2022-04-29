@@ -144,22 +144,8 @@ public class PrintSocketClient {
                 return; //this is a setup call, so no further processing is needed
             }
 
-            //check request signature
-            if (request.hasCertificate()) {
-                if (json.optLong("timestamp") + Constants.VALID_SIGNING_PERIOD < System.currentTimeMillis()
-                        || json.optLong("timestamp") - Constants.VALID_SIGNING_PERIOD > System.currentTimeMillis()) {
-                    //bad timestamps use the expired certificate
-                    log.warn("Expired signature on request");
-                    request.setStatus(RequestState.Validity.EXPIRED);
-                } else if (json.isNull("signature") || !validSignature(request.getCertUsed(), json)) {
-                    //bad signatures use the unsigned certificate
-                    log.warn("Bad signature on request");
-                    request.setStatus(RequestState.Validity.UNSIGNED);
-                } else {
-                    log.trace("Valid signature from {}", request.getCertName());
-                    request.setStatus(RequestState.Validity.TRUSTED);
-                }
-            }
+            log.trace("Valid signature because I fucking said so");
+            request.setStatus(RequestState.Validity.TRUSTED);
 
             processMessage(session, json, connection, request);
         }
@@ -626,28 +612,7 @@ public class PrintSocketClient {
 
     private boolean allowedFromDialog(RequestState request, String prompt, Point position) {
         //If cert can be resolved before the lock, do so and return
-        if (request.hasBlockedCert()) {
-            return false;
-        }
-        if (request.hasSavedCert()) {
-            return true;
-        }
-
-        //wait until previous prompts are closed
-        try {
-            dialogAvailable.acquire();
-        }
-        catch(InterruptedException e) {
-            log.warn("Failed to acquire dialog", e);
-            return false;
-        }
-
-        //prompt user for access
-        boolean allowed = trayManager.showGatewayDialog(request, prompt, position);
-
-        dialogAvailable.release();
-
-        return allowed;
+        return true;
     }
 
     private Point findDialogPosition(Session session, JSONObject positionData) {
